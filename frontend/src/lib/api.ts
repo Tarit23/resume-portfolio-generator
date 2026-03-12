@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import axios from 'axios';
 
-const API_URL = 'https://witty-taxes-join.loca.lt/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export const generatePortfolio = async (formData: FormData) => {
   const response = await axios.post(`${API_URL}/generate`, formData, {
