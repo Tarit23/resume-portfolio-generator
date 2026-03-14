@@ -67,7 +67,10 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
       const bytez = getBytez();
       if (!bytez) throw new Error('AI Service not initialized - check API Key');
 
-      const model = bytez.model("google/gemini-2.0-flash-exp-image-generation"); 
+      // Attempt with the most likely correct model IDs found in research
+      const modelId = "google/gemini-2.5-flash"; 
+      console.log(`Attempting generation with Bytez model: ${modelId}`);
+      const model = bytez.model(modelId); 
       const input = [
         { "role": "user", "content": prompt }
       ];
