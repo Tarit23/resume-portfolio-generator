@@ -16,3 +16,5 @@ services:
         sync: false
       - key: CLOUDINARY_URL
         sync: false
+      - key: BYTEZ_API_KEY
+        sync: false
