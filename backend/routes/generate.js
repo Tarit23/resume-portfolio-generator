@@ -76,7 +76,10 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
       ];
 
       console.log('Sending request to Bytez...');
-      const { error, output } = await model.run(input);
+      const response = await model.run(input);
+      console.log('Raw Bytez response object:', JSON.stringify(response, null, 2));
+
+      const { error, output } = response;
 
       if (error) {
         console.error('Bytez Error:', error);
@@ -92,7 +95,7 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
         aiResponse = output.trim();
       }
 
-      console.log('Bytez response received.');
+      console.log('Extracted AI Text:', aiResponse);
       
       const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
