@@ -30,9 +30,7 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
       throw new Error('PDF parsing library misconfigured');
     }
     const pdfData = await pdfParse(dataBuffer);
-    const resumeText = pdfData.text;
-
-    // 2. Extract Data using Gemini
+    console.log('Parsed Resume Text length:', resumeText.length);
     const prompt = `
     Extract the following information from the provided resume text and return it strictly as a JSON object matching this structure. Do not return any markdown formatting or code blocks, just raw JSON:
     {
@@ -49,8 +47,10 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     ${resumeText}
     `;
 
+    console.log('Sending request to Gemini...');
     const result = await model.generateContent(prompt);
     let aiResponse = result.response.text().trim();
+    console.log('Gemini raw response received.');
     
     // Improved JSON extraction: find the first { and last }
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
@@ -58,6 +58,7 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
       aiResponse = jsonMatch[0];
     }
     
+    console.log('Cleaned AI Response:', aiResponse);
     const extractedData = JSON.parse(aiResponse);
 
     // 3. Upload Work Files to Cloudinary
