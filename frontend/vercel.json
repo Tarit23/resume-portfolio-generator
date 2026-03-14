@@ -9,7 +9,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://promptfolio-backend.onrender.com/api/:path*"
+      "destination": "https://resume-portfolio-generator.onrender.com/api/:path*"
     }
   ]
 }

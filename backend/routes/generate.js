@@ -26,6 +26,10 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
 
     // 1. Parse PDF
     const dataBuffer = fs.readFileSync(resumeFile.path);
+    if (typeof pdfParse !== 'function') {
+      console.error('pdf-parse is not a function. Checking exports:', pdfParse);
+      throw new Error('PDF parsing library misconfigured');
+    }
     const pdfData = await pdfParse(dataBuffer);
     const resumeText = pdfData.text;
 

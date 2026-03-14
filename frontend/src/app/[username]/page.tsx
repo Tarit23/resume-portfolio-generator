@@ -4,8 +4,8 @@ import { ThemeCard } from "@/components/ui/ThemeCard";
 import { getPortfolio } from "@/lib/api";
 import { Mail, Globe, Github, Linkedin, Briefcase, GraduationCap, Cpu, Layers, ExternalLink, FileText, Play, Image as ImageIcon } from "lucide-react";
 
-export default async function PortfolioPage({ params }: { params: { username: string } }) {
-  const { username } = params;
+export default async function PortfolioPage({ params }: { params: Promise<{ username: string }> }) {
+  const { username } = await params;
   
   let data;
   try {
