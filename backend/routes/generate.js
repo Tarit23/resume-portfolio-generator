@@ -50,7 +50,14 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     `;
 
     const result = await model.generateContent(prompt);
-    const aiResponse = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+    let aiResponse = result.response.text().trim();
+    
+    // Improved JSON extraction: find the first { and last }
+    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      aiResponse = jsonMatch[0];
+    }
+    
     const extractedData = JSON.parse(aiResponse);
 
     // 3. Upload Work Files to Cloudinary
