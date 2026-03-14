@@ -45,7 +45,9 @@ export default function GeneratePortfolio() {
       router.push(`/${username}`);
     } catch (error: any) {
       console.error(error);
-      alert(error.response?.data?.error || "Failed to generate portfolio. Make sure the backend is running.");
+      const errorMsg = error.response?.data?.error || "Failed to generate portfolio";
+      const errorDetails = error.response?.data?.details ? `\nDetails: ${error.response.data.details}` : "";
+      alert(`${errorMsg}${errorDetails}\n\nMake sure the backend is running.`);
       setIsGenerating(false);
     }
   };
