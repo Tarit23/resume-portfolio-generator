@@ -24,14 +24,27 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     }
 
     // 1. Parse PDF
+    console.log('Step 1: Parsing PDF...');
     const dataBuffer = fs.readFileSync(resumeFile.path);
     if (typeof pdfParse !== 'function') {
-      console.error('pdf-parse is not a function. Checking exports:', pdfParse);
+      console.error('CRITICAL: pdf-parse is not a function. Value:', pdfParse);
       throw new Error('PDF parsing library misconfigured');
     }
     const pdfData = await pdfParse(dataBuffer);
     const resumeText = pdfData.text || '';
-    console.log('Parsed Resume Text length:', resumeText.length);
+    console.log('PDF parsed successfully. Text length:', resumeText.length);
+
+    if (resumeText.trim().length === 0) {
+      console.warn('WARNING: Parsed resume text is empty!');
+    }
+
+    // 2. Extract Data using Gemini
+    console.log('Step 2: Calling Gemini AI...');
+    if (!process.env.GEMINI_API_KEY) {
+      console.error('CRITICAL: GEMINI_API_KEY is missing from environment variables!');
+      throw new Error('AI Service key missing');
+    }
+
     const prompt = `
     Extract the following information from the provided resume text and return it strictly as a JSON object matching this structure. Do not return any markdown formatting or code blocks, just raw JSON:
     {
@@ -48,54 +61,66 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     ${resumeText}
     `;
 
-    console.log('Sending request to Gemini...');
-    const result = await model.generateContent(prompt);
-    let aiResponse = result.response.text().trim();
-    console.log('Gemini raw response received.');
-    
-    // Improved JSON extraction: find the first { and last }
-    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      aiResponse = jsonMatch[0];
-    }
-    
-    console.log('Cleaned AI Response:', aiResponse);
-    const extractedData = JSON.parse(aiResponse);
-
-    // 3. Upload Work Files to Cloudinary
-    const uploadedWorkFiles = [];
-    for (const file of workFiles) {
-      try {
-        if (process.env.CLOUDINARY_API_KEY) {
-          const uploadRes = await cloudinary.uploader.upload(file.path, { resource_type: 'auto' });
-          uploadedWorkFiles.push({ url: uploadRes.secure_url, fileType: file.mimetype, name: file.originalname });
-        } else {
-          uploadedWorkFiles.push({ url: 'https://via.placeholder.com/150', fileType: file.mimetype, name: file.originalname });
-        }
-      } catch (err) {
-        console.error("Cloudinary upload failed", err);
-      } finally {
-        fs.unlinkSync(file.path);
+    try {
+      const result = await model.generateContent(prompt);
+      let aiResponse = result.response.text().trim();
+      console.log('Gemini raw response length:', aiResponse.length);
+      
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        aiResponse = jsonMatch[0];
       }
-    }
-    // 4. Save to Database (Upsert)
-    const portfolio = await Portfolio.findOneAndUpdate(
-      { username },
-      {
-        username,
-        name,
-        theme,
-        ...extractedData,
-        workFiles: uploadedWorkFiles
-      },
-      { new: true, upsert: true }
-    );
+      
+      const extractedData = JSON.parse(aiResponse);
+      console.log('Gemini response parsed into JSON successfully.');
 
-    res.status(200).json({ success: true, portfolio, redirectUrl: `/${username}` });
+      // 3. Upload Work Files to Cloudinary
+      console.log('Step 3: Handling file uploads...');
+      const uploadedWorkFiles = [];
+      for (const file of workFiles) {
+        try {
+          if (process.env.CLOUDINARY_API_KEY) {
+            const uploadRes = await cloudinary.uploader.upload(file.path, { resource_type: 'auto' });
+            uploadedWorkFiles.push({ url: uploadRes.secure_url, fileType: file.mimetype, name: file.originalname });
+          } else {
+            uploadedWorkFiles.push({ url: 'https://via.placeholder.com/150', fileType: file.mimetype, name: file.originalname });
+          }
+        } catch (err) {
+          console.error("Cloudinary upload failed for file:", file.originalname, err.message);
+        } finally {
+          if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        }
+      }
+
+      // 4. Save to Database
+      console.log('Step 4: Saving to Database for username:', username);
+      const portfolio = await Portfolio.findOneAndUpdate(
+        { username },
+        {
+          username,
+          name,
+          theme,
+          ...extractedData,
+          workFiles: uploadedWorkFiles
+        },
+        { new: true, upsert: true }
+      );
+      console.log('Portfolio saved/updated successfully in MongoDB.');
+
+      res.status(200).json({ success: true, portfolio, redirectUrl: `/${username}` });
+
+    } catch (aiError) {
+      console.error('AI Processing Error:', aiError);
+      throw aiError;
+    }
 
   } catch (error) {
-    console.error('Generation Error:', error);
-    res.status(500).json({ error: 'Failed to generate portfolio' });
+    console.error('FULL GENERATION ERROR:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate portfolio', 
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   } finally {
     // Ensure cleanup of local files
     if (req.files) {
