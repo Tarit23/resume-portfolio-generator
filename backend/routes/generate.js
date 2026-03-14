@@ -40,8 +40,8 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     const resumeText = pdfData.text || '';
     console.log('PDF parsed successfully. Text length:', resumeText.length);
 
-    // 2. Extract Data using Bytez (Gemini 2.0 Flash)
-    console.log('Step 2: Calling Bytez AI (Gemini 2.0 Flash)...');
+    // 2. Extract Data using Bytez
+    console.log('Step 2: Calling Bytez AI...');
     if (!process.env.BYTEZ_API_KEY) {
       console.error('CRITICAL: BYTEZ_API_KEY is missing!');
       throw new Error('AI Service key missing');
@@ -67,16 +67,14 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
       const bytez = getBytez();
       if (!bytez) throw new Error('AI Service not initialized - check API Key');
 
-      // Attempt with the most likely correct model IDs found in research
-      const modelId = "google/gemini-2.5-flash"; 
+      // Using the user-specified fine-tuned portfolio model
+      const modelId = "AmineOueslati/longt5-tglobal-base-portfolio-lead-finetuned"; 
       console.log(`Attempting generation with Bytez model: ${modelId}`);
       const model = bytez.model(modelId); 
-      const input = [
-        { "role": "user", "content": prompt }
-      ];
 
       console.log('Sending request to Bytez...');
-      const response = await model.run(input);
+      // Note: T5 models usually take a string directly, not a chat array
+      const response = await model.run(prompt);
       console.log('Raw Bytez response object:', JSON.stringify(response, null, 2));
 
       const { error, output } = response;
@@ -92,7 +90,7 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
         const assistantMsg = output.find(msg => msg.role === "assistant");
         if (assistantMsg) {
           aiResponse = assistantMsg.content.trim();
-        } else {
+        } else if (output[output.length - 1].content) {
           // Fallback: Use the content of the very last message in the list
           aiResponse = output[output.length - 1].content.trim();
         }
