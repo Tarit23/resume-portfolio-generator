@@ -14,10 +14,18 @@ const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY?.trim(),
   defaultHeaders: {
-    "HTTP-Referer": "https://resumeportfoliogenerator.vercel.app/", // Optional
-    "X-Title": "PromptFolio", // Optional
+    "HTTP-Referer": "https://resumeportfoliogenerator.vercel.app/",
+    "X-Title": "PromptFolio",
   }
 });
+
+// Robust model fallback list
+const FREE_MODELS = [
+  "google/gemini-2.0-flash-lite-preview-02-05:free",
+  "meta-llama/llama-3.1-8b-instruct:free",
+  "meta-llama/llama-3-8b-instruct:free",
+  "openrouter/auto" // Final fallback
+];
 
 router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFiles', maxCount: 10 }]), async (req, res) => {
   try {
@@ -40,8 +48,8 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     const resumeText = pdfData.text || '';
     console.log('PDF parsed successfully. Text length:', resumeText.length);
 
-    // 2. Extract Data using OpenRouter (Free Models)
-    console.log('Step 2: Calling OpenRouter AI...');
+    // 2. Extract Data using OpenRouter (with Fallbacks)
+    console.log('Step 2: Calling OpenRouter AI with fallbacks...');
     if (!process.env.OPENROUTER_API_KEY) {
       console.error('CRITICAL: OPENROUTER_API_KEY is missing!');
       throw new Error('AI Service key missing');
@@ -63,62 +71,70 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     ${resumeText}
     `;
 
-    try {
-      // Try high-quality free models first
-      const completion = await openai.chat.completions.create({
-        model: "google/gemini-2.0-flash-exp:free",
-        messages: [{ role: "user", content: prompt }],
-      });
+    let extractedData = null;
+    let lastError = null;
 
-      let aiResponse = completion.choices[0].message.content.trim();
-      console.log('OpenRouter raw response received.');
-      
-      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        aiResponse = jsonMatch[0];
-      }
-      
-      const extractedData = JSON.parse(aiResponse);
-      console.log('AI response parsed into JSON successfully.');
+    for (const modelId of FREE_MODELS) {
+      try {
+        console.log(`Attempting generation with model: ${modelId}`);
+        const completion = await openai.chat.completions.create({
+          model: modelId,
+          messages: [{ role: "user", content: prompt }],
+        });
 
-      // 3. Upload Work Files to Cloudinary
-      console.log('Step 3: Handling file uploads...');
-      const uploadedWorkFiles = [];
-      for (const file of workFiles) {
-        try {
-          if (process.env.CLOUDINARY_API_KEY) {
-            const uploadRes = await cloudinary.uploader.upload(file.path, { resource_type: 'auto' });
-            uploadedWorkFiles.push({ url: uploadRes.secure_url, fileType: file.mimetype, name: file.originalname });
-          } else {
-            uploadedWorkFiles.push({ url: 'https://via.placeholder.com/150', fileType: file.mimetype, name: file.originalname });
-          }
-        } catch (err) {
-          console.error("Cloudinary upload failed", err.message);
-        } finally {
-          if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        let aiResponse = completion.choices[0].message.content.trim();
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          aiResponse = jsonMatch[0];
         }
+        
+        extractedData = JSON.parse(aiResponse);
+        console.log(`Success with model: ${modelId}`);
+        break; // Stop loop on success
+      } catch (err) {
+        console.error(`Model ${modelId} failed:`, err.message);
+        lastError = err;
+        continue; // Try next model
       }
-
-      // 4. Save to Database
-      console.log('Step 4: Saving to Database for:', username);
-      const portfolio = await Portfolio.findOneAndUpdate(
-        { username },
-        {
-          username,
-          name,
-          theme,
-          ...extractedData,
-          workFiles: uploadedWorkFiles
-        },
-        { new: true, upsert: true }
-      );
-
-      res.status(200).json({ success: true, portfolio, redirectUrl: `/${username}` });
-
-    } catch (aiError) {
-      console.error('AI Processing Error:', aiError.message);
-      throw aiError;
     }
+
+    if (!extractedData) {
+      throw new Error(`AI Generation failed after trying all free models. Last error: ${lastError?.message}`);
+    }
+
+    // 3. Upload Work Files to Cloudinary
+    console.log('Step 3: Handling file uploads...');
+    const uploadedWorkFiles = [];
+    for (const file of workFiles) {
+      try {
+        if (process.env.CLOUDINARY_API_KEY) {
+          const uploadRes = await cloudinary.uploader.upload(file.path, { resource_type: 'auto' });
+          uploadedWorkFiles.push({ url: uploadRes.secure_url, fileType: file.mimetype, name: file.originalname });
+        } else {
+          uploadedWorkFiles.push({ url: 'https://via.placeholder.com/150', fileType: file.mimetype, name: file.originalname });
+        }
+      } catch (err) {
+        console.error("Cloudinary upload failed", err.message);
+      } finally {
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+      }
+    }
+
+    // 4. Save to Database
+    console.log('Step 4: Saving to Database for:', username);
+    const portfolio = await Portfolio.findOneAndUpdate(
+      { username },
+      {
+        username,
+        name,
+        theme,
+        ...extractedData,
+        workFiles: uploadedWorkFiles
+      },
+      { new: true, upsert: true }
+    );
+
+    res.status(200).json({ success: true, portfolio, redirectUrl: `/${username}` });
 
   } catch (error) {
     console.error('FULL GENERATION ERROR:', error);
