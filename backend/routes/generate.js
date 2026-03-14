@@ -9,8 +9,15 @@ const fs = require('fs');
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
 
-// Initialize Bytez
-const bytez = new Bytez(process.env.BYTEZ_API_KEY?.trim());
+// Initialize Bytez (guarded)
+const getBytez = () => {
+  const key = process.env.BYTEZ_API_KEY?.trim();
+  if (!key) {
+    console.warn("WARNING: BYTEZ_API_KEY is missing from environment variables.");
+    return null;
+  }
+  return new Bytez(key);
+};
 
 router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFiles', maxCount: 10 }]), async (req, res) => {
   try {
@@ -57,7 +64,10 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     `;
 
     try {
-      const model = bytez.model("google/gemini-2.0-flash-exp-image-generation"); // Using the model identifier from your screenshot
+      const bytez = getBytez();
+      if (!bytez) throw new Error('AI Service not initialized - check API Key');
+
+      const model = bytez.model("google/gemini-2.0-flash-exp-image-generation"); 
       const input = [
         { "role": "user", "content": prompt }
       ];
