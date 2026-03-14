@@ -122,7 +122,8 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     }
 
     if (!extractedData) {
-      throw new Error('AI failed to generate a valid portfolio structure. Try with a different resume or check your Bytez balance.');
+      const errorMsg = 'AI failed to generate a valid portfolio structure. This usually happens if your Bytez.com credits have run out ($1 free limit reached) or the models are busy. Please check your Bytez dashboard balance.';
+      throw new Error(errorMsg);
     }
 
     console.log('Data extracted successfully.');
