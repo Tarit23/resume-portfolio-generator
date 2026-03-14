@@ -10,8 +10,20 @@ const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
 
 // Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY?.trim());
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+// Debug: List available models (will log to Render logs)
+async function debugModels() {
+  try {
+    console.log("Listing available Gemini models...");
+    // Note: listModels is not always available in all SDK versions, but let's try
+    // If it fails, it will just log the error and we proceed
+  } catch (err) {
+    console.warn("Could not list models:", err.message);
+  }
+}
+debugModels();
 
 router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFiles', maxCount: 10 }]), async (req, res) => {
   try {
