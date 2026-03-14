@@ -88,21 +88,36 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
 
       let aiResponse = "";
       if (Array.isArray(output) && output.length > 0) {
-        // Find the assistant response
+        // Try to find the assistant response first
         const assistantMsg = output.find(msg => msg.role === "assistant");
-        aiResponse = assistantMsg ? assistantMsg.content.trim() : "";
+        if (assistantMsg) {
+          aiResponse = assistantMsg.content.trim();
+        } else {
+          // Fallback: Use the content of the very last message in the list
+          aiResponse = output[output.length - 1].content.trim();
+        }
       } else if (typeof output === 'string') {
         aiResponse = output.trim();
       }
 
       console.log('Extracted AI Text:', aiResponse);
+
+      if (!aiResponse) {
+        throw new Error('AI returned an empty response. Please check your Bytez account balance or quotas.');
+      }
       
       const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         aiResponse = jsonMatch[0];
       }
       
-      const extractedData = JSON.parse(aiResponse);
+      let extractedData;
+      try {
+        extractedData = JSON.parse(aiResponse);
+      } catch (parseError) {
+        console.error('Failed to parse AI response as JSON:', aiResponse);
+        throw new Error(`AI response was not valid JSON: ${aiResponse.substring(0, 50)}...`);
+      }
       console.log('AI response parsed into JSON successfully.');
 
       // 3. Upload Work Files to Cloudinary
