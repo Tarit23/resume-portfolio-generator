@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const pdfParse = require('pdf-parse');
-const { OpenAI } = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const cloudinary = require('../config/cloudinary');
 const Portfolio = require('../models/Portfolio');
 const fs = require('fs');
@@ -9,10 +9,9 @@ const fs = require('fs');
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
 
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize Gemini
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFiles', maxCount: 10 }]), async (req, res) => {
   try {
@@ -33,7 +32,7 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     const pdfData = await pdfParse(dataBuffer);
     const resumeText = pdfData.text;
 
-    // 2. Extract Data using OpenAI
+    // 2. Extract Data using Gemini
     const prompt = `
     Extract the following information from the provided resume text and return it strictly as a JSON object matching this structure. Do not return any markdown formatting or code blocks, just raw JSON:
     {
@@ -50,13 +49,8 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     ${resumeText}
     `;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-    });
-
-    const aiResponse = completion.choices[0].message.content;
+    const result = await model.generateContent(prompt);
+    const aiResponse = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
     const extractedData = JSON.parse(aiResponse);
 
     // 3. Upload Work Files to Cloudinary
