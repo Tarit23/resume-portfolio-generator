@@ -30,6 +30,7 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
       throw new Error('PDF parsing library misconfigured');
     }
     const pdfData = await pdfParse(dataBuffer);
+    const resumeText = pdfData.text || '';
     console.log('Parsed Resume Text length:', resumeText.length);
     const prompt = `
     Extract the following information from the provided resume text and return it strictly as a JSON object matching this structure. Do not return any markdown formatting or code blocks, just raw JSON:
