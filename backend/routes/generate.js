@@ -22,12 +22,15 @@ const getBytez = () => {
 // Helper to extract JSON from text
 const extractJSON = (text) => {
   if (!text) return null;
+  // Look for JSON block or raw object
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
     try {
-      return JSON.parse(jsonMatch[0]);
+      // Clean up potential markdown code block markers
+      let jsonStr = jsonMatch[0].trim();
+      return JSON.parse(jsonStr);
     } catch (e) {
-      console.error("Found {} but it's not valid JSON", e.message);
+      console.error("Found {} but it's not valid JSON:", e.message);
       return null;
     }
   }
@@ -35,6 +38,7 @@ const extractJSON = (text) => {
 };
 
 router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFiles', maxCount: 10 }]), async (req, res) => {
+  let lastRawOutput = "No response received";
   try {
     const { username, name, theme } = req.body;
     const resumeFile = req.files['resume'] ? req.files['resume'][0] : null;
@@ -47,65 +51,64 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     // 1. Parse PDF
     console.log('Step 1: Parsing PDF...');
     const dataBuffer = fs.readFileSync(resumeFile.path);
-    if (typeof pdfParse !== 'function') {
-      console.error('CRITICAL: pdf-parse is not a function.');
-      throw new Error('PDF parsing library misconfigured');
-    }
     const pdfData = await pdfParse(dataBuffer);
     const resumeText = pdfData.text || '';
+    
+    if (resumeText.length < 50) {
+      throw new Error("The uploaded resume seems empty or could not be read. Please try a different PDF.");
+    }
     console.log('PDF parsed successfully. Text length:', resumeText.length);
 
     // 2. Extract Data using Bytez
     console.log('Step 2: Calling Bytez AI...');
     if (!process.env.BYTEZ_API_KEY) {
-      console.error('CRITICAL: BYTEZ_API_KEY is missing!');
-      throw new Error('AI Service key missing');
+      throw new Error('BYTEZ_API_KEY is missing from server configuration.');
     }
 
     const prompt = `
-    Extract information from this resume and return it strictly as a JSON object with this structure:
+    Task: Extract resume data into strictly valid JSON.
+    Structure:
     {
-      "title": "Job Title",
-      "about": "Brief professional summary",
-      "skills": ["Skill 1", "Skill 2"],
-      "projects": [{"title": "Project Name", "description": "Details", "link": "url"}],
-      "experience": [{"role": "Role", "company": "Company", "duration": "Dates", "description": "Details"}],
-      "education": [{"degree": "Degree", "institution": "School", "year": "Year"}],
+      "title": "Title",
+      "about": "Summary",
+      "skills": ["Skill1"],
+      "projects": [{"title": "P1", "description": "D1", "link": ""}],
+      "experience": [{"role": "R1", "company": "C1", "duration": "T1", "description": "D1"}],
+      "education": [{"degree": "Deg1", "institution": "School1", "year": "2023"}],
       "contact": {"email": "", "linkedin": "", "github": "", "website": ""}
     }
     
-    Resume Text:
+    Resume Content:
     ${resumeText}
     `;
 
     const bytez = getBytez();
-    if (!bytez) throw new Error('AI Service not initialized - check API Key');
+    if (!bytez) throw new Error('Bytez SDK failed to initialize.');
 
     let extractedData = null;
     
-    // Attempt 1: User's requested model
-    const primaryModelId = "AmineOueslati/longt5-tglobal-base-portfolio-lead-finetuned";
-    console.log(`[Attempt 1] Trying ${primaryModelId}...`);
-    try {
-      const model = bytez.model(primaryModelId);
-      const resp = await model.run(prompt);
-      const output = resp.output;
-      let text = (typeof output === 'string') ? output : (Array.isArray(output) && output[0]?.content) ? output[0].content : "";
-      
-      console.log('Primary Model raw output snippet:', text.substring(0, 100));
-      extractedData = extractJSON(text);
-    } catch (err) {
-      console.warn(`Primary model failed: ${err.message}`);
-    }
+    // MODEL FALLBACK SEQUENCE
+    const models = [
+      { id: "google/gemini-2.5-pro", type: "chat" }, // Best free model
+      { id: "AmineOueslati/longt5-tglobal-base-portfolio-lead-finetuned", type: "text" }, // User requested
+      { id: "Qwen/Qwen2.5-72B-Instruct", type: "chat" } // High capacity backup
+    ];
 
-    // Attempt 2: Fallback to a highly capable model if primary failed to produce JSON
-    if (!extractedData) {
-      const fallbackModelId = "google/gemini-2.5-flash"; 
-      console.log(`[Attempt 2] Primary failed, falling back to ${fallbackModelId}...`);
+    for (const modelInfo of models) {
+      if (extractedData) break;
+      
+      console.log(`[Attempt] Trying model: ${modelInfo.id}...`);
       try {
-        const model = bytez.model(fallbackModelId);
-        // Gemini models like chat format
-        const resp = await model.run([{ role: 'user', content: prompt }]);
+        const model = bytez.model(modelInfo.id);
+        const payload = modelInfo.type === "chat" ? [{ role: 'user', content: prompt }] : prompt;
+        
+        const resp = await model.run(payload);
+        
+        if (resp.error) {
+           console.warn(`Model ${modelInfo.id} returned error: ${resp.error}`);
+           continue;
+        }
+
         const output = resp.output;
         let text = "";
         if (Array.isArray(output)) {
@@ -113,23 +116,26 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
         } else if (typeof output === 'string') {
            text = output;
         }
-        
-        console.log('Fallback Model raw output snippet:', text.substring(0, 100));
-        extractedData = extractJSON(text);
+
+        if (text) {
+          lastRawOutput = text;
+          extractedData = extractJSON(text);
+          if (extractedData) console.log(`SUCCESS with model: ${modelInfo.id}`);
+        }
       } catch (err) {
-        console.error(`Fallback model failed: ${err.message}`);
+        console.warn(`Model ${modelInfo.id} crashed: ${err.message}`);
       }
     }
 
     if (!extractedData) {
-      const errorMsg = 'AI failed to generate a valid portfolio structure. This usually happens if your Bytez.com credits have run out ($1 free limit reached) or the models are busy. Please check your Bytez dashboard balance.';
-      throw new Error(errorMsg);
+      console.error("ALL MODELS FAILED. Last output:", lastRawOutput);
+      throw new Error(`AI failed to generate profile. 
+      Balance: $0.99 remaining (OK).
+      Last AI response: "${lastRawOutput.substring(0, 100)}..."
+      Check if your resume text is too long or contains unsupported characters.`);
     }
 
-    console.log('Data extracted successfully.');
-
-    // 3. Upload Work Files to Cloudinary
-    console.log('Step 3: Handling file uploads...');
+    // 3. Upload Work Files
     const uploadedWorkFiles = [];
     for (const file of workFiles) {
       try {
@@ -147,16 +153,9 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     }
 
     // 4. Save to Database
-    console.log('Step 4: Saving to Database for:', username);
     const portfolio = await Portfolio.findOneAndUpdate(
       { username },
-      {
-        username,
-        name,
-        theme,
-        ...extractedData,
-        workFiles: uploadedWorkFiles
-      },
+      { username, name, theme, ...extractedData, workFiles: uploadedWorkFiles },
       { new: true, upsert: true }
     );
 
@@ -164,21 +163,12 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
 
   } catch (error) {
     console.error('FULL GENERATION ERROR:', error);
-    res.status(500).json({ 
-      error: 'Failed to generate portfolio', 
-      details: error.message
-    });
+    res.status(500).json({ error: 'Generation Failed', details: error.message });
   } finally {
     if (req.files) {
-      if (req.files['resume']) {
-        const resumePath = req.files['resume'][0].path;
-        if (fs.existsSync(resumePath)) fs.unlinkSync(resumePath);
-      }
-      if (req.files['workFiles']) {
-        req.files['workFiles'].forEach(file => {
-          if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-        });
-      }
+      Object.values(req.files).flat().forEach(file => {
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+      });
     }
   }
 });
