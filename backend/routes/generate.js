@@ -170,14 +170,17 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
           
           console.log(`- CLOUDINARY SUCCESS: ${file.originalname} -> ${uploadRes.secure_url} (${uploadRes.resource_type}/${uploadRes.format})`);
           
-          // Map mimetype more reliably
+          // Construct precise mime-type from Cloudinary metadata
           let finalFileType = file.mimetype;
           if (uploadRes.resource_type === 'video') {
-            finalFileType = 'video/mp4'; // Standardized for web playback
+            finalFileType = `video/${uploadRes.format === 'mov' ? 'quicktime' : (uploadRes.format || 'mp4')}`;
           } else if (uploadRes.resource_type === 'image') {
             finalFileType = `image/${uploadRes.format || 'png'}`;
+          } else if (uploadRes.format === 'pdf') {
+            finalFileType = 'application/pdf';
           }
           
+          // Store the raw URL from Cloudinary - it's already encoded
           uploadedWorkFiles.push({ 
             url: uploadRes.secure_url, 
             fileType: finalFileType, 

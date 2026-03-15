@@ -29,16 +29,13 @@ export default function PortfolioGallery({ files, theme }: PortfolioGalleryProps
     setMediaErrors(prev => ({ ...prev, [url]: true }));
   };
 
-  // Helper to ensure URLs are properly encoded for special characters like () or spaces
+  // Helper to ensure URLs are properly handled
   const safeUrl = (url: string) => {
     if (!url) return "";
-    try {
-      // encodeURI handles spaces, but not ()
-      // We explicitly encode parentheses because some browsers/proxies struggle with them in filenames
-      return encodeURI(url).replace(/\(/g, "%28").replace(/\)/g, "%29");
-    } catch (e) {
-      return url;
-    }
+    // Cloudinary URLs are already encoded by the SDK.
+    // We only need to escape naked parentheses if they are being used in a CSS context,
+    // but for <img> and <video> src, the raw URL from Cloudinary is usually perfect.
+    return url;
   };
 
   if (!files || files.length === 0) return null;
@@ -78,13 +75,14 @@ export default function PortfolioGallery({ files, theme }: PortfolioGalleryProps
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-500/10 gap-2 p-6 text-center">
                    <X className="w-8 h-8 text-red-400 opacity-50" />
                    <div className="text-[10px] font-bold uppercase tracking-widest opacity-40">Load Failed</div>
+                   <div className="text-[8px] opacity-20 truncate max-w-full font-mono">{file.fileType}</div>
                    <a 
                     href={file.url} 
                     target="_blank" 
                     onClick={(e) => e.stopPropagation()}
-                    className="text-[10px] underline opacity-60 hover:opacity-100"
+                    className="mt-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[9px] font-bold hover:bg-white/10 transition-colors"
                    >
-                     View Original
+                     Direct Link ↗
                    </a>
                 </div>
               )}
@@ -110,7 +108,7 @@ export default function PortfolioGallery({ files, theme }: PortfolioGalleryProps
                       onCanPlay={() => handleMediaLoad(file.url)}
                       onError={() => handleMediaError(file.url)}
                     >
-                      <source src={url} type={file.fileType || "video/mp4"} />
+                      <source src={url} type={file.fileType} />
                     </video>
                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
                       <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
