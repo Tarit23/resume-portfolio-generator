@@ -33,9 +33,9 @@ export default function PortfolioGallery({ files, theme }: PortfolioGalleryProps
   const safeUrl = (url: string) => {
     if (!url) return "";
     try {
-      // If it's already encoded, don't double encode. 
-      // Most Cloudinary URLs are safe, but original names preserved in URL can be tricky.
-      return url.includes("%") ? url : encodeURI(url);
+      // encodeURI handles spaces, but not ()
+      // We explicitly encode parentheses because some browsers/proxies struggle with them in filenames
+      return encodeURI(url).replace(/\(/g, "%28").replace(/\)/g, "%29");
     } catch (e) {
       return url;
     }
@@ -77,7 +77,15 @@ export default function PortfolioGallery({ files, theme }: PortfolioGalleryProps
               {hasError && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-500/10 gap-2 p-6 text-center">
                    <X className="w-8 h-8 text-red-400 opacity-50" />
-                   <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">Load Failed</span>
+                   <div className="text-[10px] font-bold uppercase tracking-widest opacity-40">Load Failed</div>
+                   <a 
+                    href={file.url} 
+                    target="_blank" 
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-[10px] underline opacity-60 hover:opacity-100"
+                   >
+                     View Original
+                   </a>
                 </div>
               )}
 
@@ -88,7 +96,6 @@ export default function PortfolioGallery({ files, theme }: PortfolioGalleryProps
                     alt={file.name} 
                     onLoad={() => handleMediaLoad(file.url)}
                     onError={() => handleMediaError(file.url)}
-                    crossOrigin="anonymous"
                     className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${isLoaded ? 'opacity-100' : 'opacity-0'}`} 
                   />
                 ) : isVideo ? (
@@ -100,8 +107,7 @@ export default function PortfolioGallery({ files, theme }: PortfolioGalleryProps
                       playsInline
                       autoPlay
                       preload="auto"
-                      crossOrigin="anonymous"
-                      onLoadedData={() => handleMediaLoad(file.url)}
+                      onCanPlay={() => handleMediaLoad(file.url)}
                       onError={() => handleMediaError(file.url)}
                     >
                       <source src={url} type={file.fileType || "video/mp4"} />
@@ -166,7 +172,6 @@ export default function PortfolioGallery({ files, theme }: PortfolioGalleryProps
                     <img 
                       src={safeUrl(selectedFile.url)} 
                       alt={selectedFile.name} 
-                      crossOrigin="anonymous"
                       className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" 
                     />
                   ) : selectedFile.fileType.includes("video") ? (
@@ -175,7 +180,6 @@ export default function PortfolioGallery({ files, theme }: PortfolioGalleryProps
                       controls 
                       autoPlay 
                       playsInline
-                      crossOrigin="anonymous"
                     >
                       <source src={safeUrl(selectedFile.url)} type={selectedFile.fileType} />
                     </video>
