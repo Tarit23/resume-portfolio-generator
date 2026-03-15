@@ -66,16 +66,23 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     }
 
     const prompt = `
-    Task: Extract resume data into strictly valid JSON.
-    Structure:
+    You are a professional resume parser. 
+    Strict Task: Convert the following resume text into a single, valid JSON object.
+    
+    Rules:
+    1. ONLY return the JSON object.
+    2. Do NOT include any introductory text, markdown code blocks (\`\`\`json), or explanations.
+    3. Ensure all fields in the schema below are present. If data is missing, use empty strings or empty arrays.
+    
+    JSON Schema:
     {
-      "title": "Title",
-      "about": "Summary",
-      "skills": ["Skill1"],
-      "projects": [{"title": "P1", "description": "D1", "link": ""}],
-      "experience": [{"role": "R1", "company": "C1", "duration": "T1", "description": "D1"}],
-      "education": [{"degree": "Deg1", "institution": "School1", "year": "2023"}],
-      "contact": {"email": "", "linkedin": "", "github": "", "website": ""}
+      "title": "Professional Title (e.g. Full Stack Developer)",
+      "about": "A concise professional summary (2-3 sentences)",
+      "skills": ["Skill1", "Skill2"],
+      "projects": [{"title": "Project Name", "description": "Short description", "link": "https://..."}],
+      "experience": [{"role": "Job Title", "company": "Company Name", "duration": "e.g., 2020 - 2023", "description": "Short summary of responsibilities"}],
+      "education": [{"degree": "Degree Name", "institution": "University Name", "year": "Graduation Year"}],
+      "contact": {"email": "...", "linkedin": "...", "github": "...", "website": "..."}
     }
     
     Resume Content:
@@ -89,8 +96,8 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     
     // MODEL FALLBACK SEQUENCE
     const models = [
-      { id: "google/gemini-2.5-pro", type: "chat" }, // Best free model
-      { id: "AmineOueslati/longt5-tglobal-base-portfolio-lead-finetuned", type: "text" }, // User requested
+      { id: "google/gemini-1.5-pro", type: "chat" }, // Current stable pro model
+      { id: "google/gemini-1.5-flash", type: "chat" }, // Faster, lightweight model
       { id: "Qwen/Qwen2.5-72B-Instruct", type: "chat" } // High capacity backup
     ];
 
@@ -111,16 +118,25 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
 
         const output = resp.output;
         let text = "";
+        
+        // Handle various Bytez output formats
         if (Array.isArray(output)) {
-           text = output.find(m => m.role === 'assistant')?.content || output[output.length-1]?.content || "";
+           // Check for chat-like array output
+           text = output.find(m => m.role === 'assistant')?.content || output[output.length-1]?.content || output[0] || "";
         } else if (typeof output === 'string') {
            text = output;
+        } else if (typeof output === 'object' && output !== null) {
+           text = output.content || output.text || JSON.stringify(output);
         }
 
         if (text) {
           lastRawOutput = text;
           extractedData = extractJSON(text);
-          if (extractedData) console.log(`SUCCESS with model: ${modelInfo.id}`);
+          if (extractedData) {
+            console.log(`SUCCESS with model: ${modelInfo.id}`);
+          } else {
+            console.warn(`Model ${modelInfo.id} produced output, but no JSON found:`, text.substring(0, 100));
+          }
         }
       } catch (err) {
         console.warn(`Model ${modelInfo.id} crashed: ${err.message}`);
@@ -130,9 +146,8 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     if (!extractedData) {
       console.error("ALL MODELS FAILED. Last output:", lastRawOutput);
       throw new Error(`AI failed to generate profile. 
-      Balance: $0.99 remaining (OK).
-      Last AI response: "${lastRawOutput.substring(0, 100)}..."
-      Check if your resume text is too long or contains unsupported characters.`);
+      Please ensure your BYTEZ_API_KEY is valid and has sufficient credits.
+      Last AI response attempt: "${lastRawOutput.substring(0, 100)}..."`);
     }
 
     // 3. Upload Work Files

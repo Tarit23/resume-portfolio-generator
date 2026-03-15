@@ -24,6 +24,10 @@ app.get("/", (req, res) => {
   res.send("PromptFolio Backend API is running.");
 });
 
+app.get("/api/version", (req, res) => {
+  res.json({ version: "1.0.1", status: "Active with Gemini 1.5 Fixes" });
+});
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));

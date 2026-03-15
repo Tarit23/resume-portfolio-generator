@@ -113,8 +113,26 @@ export default async function PortfolioPage({ params }: { params: Promise<{ user
             <div className="font-medium">Get in touch</div>
             <div className="flex gap-6 opacity-70">
               {data.contact.email && <a href={`mailto:${data.contact.email}`} className="hover:opacity-100 transition">Email</a>}
-              {data.contact.linkedin && <a href={`https://${data.contact.linkedin}`} className="hover:opacity-100 transition">LinkedIn</a>}
-              {data.contact.github && <a href={`https://${data.contact.github}`} className="hover:opacity-100 transition">GitHub</a>}
+              {data.contact.linkedin && (
+                <a 
+                  href={data.contact.linkedin.startsWith('http') ? data.contact.linkedin : `https://linkedin.com/in/${data.contact.linkedin.replace(/^linkedin\.com\/in\//, '')}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="hover:opacity-100 transition"
+                >
+                  LinkedIn
+                </a>
+              )}
+              {data.contact.github && (
+                <a 
+                  href={data.contact.github.startsWith('http') ? data.contact.github : `https://github.com/${data.contact.github.replace(/^github\.com\//, '')}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="hover:opacity-100 transition"
+                >
+                  GitHub
+                </a>
+              )}
             </div>
           </div>
           <div className="text-center mt-12 text-sm opacity-40">
