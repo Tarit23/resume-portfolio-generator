@@ -59,16 +59,19 @@ export default function GeneratePortfolio() {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-float" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full animate-float" style={{ animationDelay: '2s' }} />
       
-      <div className="max-w-[1400px] mx-auto px-6 py-16 relative z-10">
+      <div className="full-screen-container py-16 relative z-10">
         <header className="flex flex-col items-start mb-16">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }} 
-            animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold tracking-wider text-blue-400 mb-6"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            AI-POWERED PORTFOLIO BUILDER
-          </motion.div>
+          <div className="flex items-center gap-4 mb-6">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }} 
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold tracking-wider text-blue-400"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              AI-POWERED PORTFOLIO BUILDER
+            </motion.div>
+            <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest border border-white/5 px-2 py-1 rounded">v1.0.2</span>
+          </div>
           
           <motion.h1 
             initial={{ opacity: 0, y: 20 }} 

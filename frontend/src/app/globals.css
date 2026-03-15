@@ -47,8 +47,28 @@ body {
 
 .text-gradient {
   background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.7) 100%);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+.full-screen-container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+@media (min-width: 1536px) {
+  .full-screen-container {
+    max-width: 1600px;
+  }
+}
+@media (min-width: 1920px) {
+  .full-screen-container {
+    max-width: 1800px;
+  }
 }
 
 .animate-float {

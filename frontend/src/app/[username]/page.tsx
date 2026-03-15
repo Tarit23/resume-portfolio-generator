@@ -53,18 +53,21 @@ export default async function PortfolioPage({ params }: { params: Promise<{ user
 
       <div className="relative z-10">
         {/* Navigation / Header */}
-        <nav className="max-w-[1400px] mx-auto px-6 py-8 flex justify-between items-center border-b border-white/5">
-          <Link href="/" className="text-xl font-black tracking-tighter flex items-center gap-2">
-            <Zap className="w-5 h-5 text-blue-500" />
-            PROMPTFOLIO
-          </Link>
+        <nav className="full-screen-container py-8 flex justify-between items-center border-b border-white/5 mx-auto">
+          <div className="flex items-center gap-4">
+            <Link href="/" className="text-xl font-black tracking-tighter flex items-center gap-2">
+              <Zap className="w-5 h-5 text-blue-500" />
+              PROMPTFOLIO
+            </Link>
+            <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest border border-white/5 px-2 py-1 rounded">v1.0.2</span>
+          </div>
           <div className="flex gap-4">
              {data.contact.email && <a href={`mailto:${data.contact.email}`} className="p-2 rounded-full hover:bg-white/5 transition-colors"><Mail className="w-5 h-5" /></a>}
              {data.contact.github && <a href={`https://github.com/${data.contact.github}`} target="_blank" className="p-2 rounded-full hover:bg-white/5 transition-colors"><Github className="w-5 h-5" /></a>}
           </div>
         </nav>
 
-        <article className="max-w-[1400px] mx-auto px-6 pt-24 pb-32">
+        <article className="full-screen-container pt-24 pb-32 mx-auto">
           
           {/* Hero Section */}
           <header className="mb-32">
