@@ -152,16 +152,22 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
 
     // 3. Upload Work Files
     const uploadedWorkFiles = [];
+    const isCloudinaryConfigured = process.env.CLOUDINARY_URL || (process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_CLOUD_NAME);
+    
+    console.log(`Step 3: Uploading ${workFiles.length} files... (Cloudinary: ${isCloudinaryConfigured ? 'YES' : 'NO'})`);
+
     for (const file of workFiles) {
       try {
-        if (process.env.CLOUDINARY_API_KEY) {
+        console.log(`- Uploading ${file.originalname} (${file.mimetype})`);
+        if (isCloudinaryConfigured) {
           const uploadRes = await cloudinary.uploader.upload(file.path, { resource_type: 'auto' });
           uploadedWorkFiles.push({ url: uploadRes.secure_url, fileType: file.mimetype, name: file.originalname });
         } else {
+          console.warn(`WARNING: Using placeholder for ${file.originalname} because Cloudinary is not configured.`);
           uploadedWorkFiles.push({ url: 'https://via.placeholder.com/150', fileType: file.mimetype, name: file.originalname });
         }
       } catch (err) {
-        console.error("Cloudinary upload failed", err.message);
+        console.error(`- Cloudinary upload failed for ${file.originalname}:`, err.message);
       } finally {
         if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
       }

@@ -59,7 +59,7 @@ export default async function PortfolioPage({ params }: { params: Promise<{ user
               <Zap className="w-5 h-5 text-blue-500" />
               PROMPTFOLIO
             </Link>
-            <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest border border-white/5 px-2 py-1 rounded">v1.0.2</span>
+            <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest border border-white/5 px-2 py-1 rounded">v1.1.0</span>
           </div>
           <div className="flex gap-4">
              {data.contact.email && <a href={`mailto:${data.contact.email}`} className="p-2 rounded-full hover:bg-white/5 transition-colors"><Mail className="w-5 h-5" /></a>}
@@ -133,7 +133,7 @@ export default async function PortfolioPage({ params }: { params: Promise<{ user
                         <video 
                           src={file.url} 
                           className="w-full h-full object-cover" 
-                          autoPlay muted loop 
+                          autoPlay muted loop playsInline controls
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gray-900">
