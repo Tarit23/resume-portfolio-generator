@@ -160,11 +160,23 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
       try {
         console.log(`- Uploading ${file.originalname} (${file.mimetype})`);
         if (isCloudinaryConfigured) {
-          const uploadRes = await cloudinary.uploader.upload(file.path, { resource_type: 'auto' });
-          console.log(`- SUCCESS: ${file.originalname} -> ${uploadRes.secure_url} (${uploadRes.resource_type}/${uploadRes.format})`);
+          // Use 'auto' and keep original filename for better SEO/tracking if possible
+          const uploadRes = await cloudinary.uploader.upload(file.path, { 
+            resource_type: 'auto',
+            folder: `portfolio_${username}`,
+            use_filename: true,
+            unique_filename: true
+          });
           
-          // Use format/resource_type if mimetype is generic
-          const finalFileType = uploadRes.resource_type === 'video' ? 'video/mp4' : (uploadRes.resource_type === 'image' ? `image/${uploadRes.format}` : file.mimetype);
+          console.log(`- CLOUDINARY SUCCESS: ${file.originalname} -> ${uploadRes.secure_url} (${uploadRes.resource_type}/${uploadRes.format})`);
+          
+          // Map mimetype more reliably
+          let finalFileType = file.mimetype;
+          if (uploadRes.resource_type === 'video') {
+            finalFileType = 'video/mp4'; // Standardized for web playback
+          } else if (uploadRes.resource_type === 'image') {
+            finalFileType = `image/${uploadRes.format || 'png'}`;
+          }
           
           uploadedWorkFiles.push({ 
             url: uploadRes.secure_url, 
@@ -172,11 +184,15 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
             name: file.originalname 
           });
         } else {
-          console.warn(`WARNING: Using placeholder for ${file.originalname} because Cloudinary is not configured.`);
-          uploadedWorkFiles.push({ url: 'https://via.placeholder.com/150', fileType: file.mimetype, name: file.originalname });
+          console.warn(`WARNING: Cloudinary not configured. Using placeholder for ${file.originalname}`);
+          uploadedWorkFiles.push({ 
+            url: 'https://via.placeholder.com/150', 
+            fileType: file.mimetype, 
+            name: file.originalname 
+          });
         }
       } catch (err) {
-        console.error(`- Cloudinary upload failed for ${file.originalname}:`, err.message);
+        console.error(`- CLOUDINARY ERROR [${file.originalname}]:`, err.message);
       } finally {
         if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
       }
