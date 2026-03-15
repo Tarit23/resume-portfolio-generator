@@ -161,7 +161,16 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
         console.log(`- Uploading ${file.originalname} (${file.mimetype})`);
         if (isCloudinaryConfigured) {
           const uploadRes = await cloudinary.uploader.upload(file.path, { resource_type: 'auto' });
-          uploadedWorkFiles.push({ url: uploadRes.secure_url, fileType: file.mimetype, name: file.originalname });
+          console.log(`- SUCCESS: ${file.originalname} -> ${uploadRes.secure_url} (${uploadRes.resource_type}/${uploadRes.format})`);
+          
+          // Use format/resource_type if mimetype is generic
+          const finalFileType = uploadRes.resource_type === 'video' ? 'video/mp4' : (uploadRes.resource_type === 'image' ? `image/${uploadRes.format}` : file.mimetype);
+          
+          uploadedWorkFiles.push({ 
+            url: uploadRes.secure_url, 
+            fileType: finalFileType, 
+            name: file.originalname 
+          });
         } else {
           console.warn(`WARNING: Using placeholder for ${file.originalname} because Cloudinary is not configured.`);
           uploadedWorkFiles.push({ url: 'https://via.placeholder.com/150', fileType: file.mimetype, name: file.originalname });

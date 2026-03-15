@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPortfolio } from "@/lib/api";
 import { Mail, Github, Linkedin, Cpu, Layers, ExternalLink, FileText, Play, Image as ImageIcon, Sparkles, Rocket, Zap } from "lucide-react";
+import PortfolioGallery from "@/components/PortfolioGallery";
 
 export default async function PortfolioPage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
@@ -113,52 +114,7 @@ export default async function PortfolioPage({ params }: { params: Promise<{ user
           </section>
 
           {/* Selected Work (Immersive Gallery) */}
-          {data.workFiles.length > 0 && (
-            <section className="mb-40">
-              <h3 className="text-[10px] font-black tracking-[0.5em] uppercase opacity-40 mb-12 flex items-center gap-4">
-                <span className="h-[1px] w-12 bg-white/20" />
-                Selected Case Studies
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {data.workFiles.map((file: any, i: number) => (
-                  <div key={i} className={`group relative rounded-[40px] overflow-hidden ${currentTheme.card} transition-all duration-500`}>
-                    <div className="aspect-[4/3] relative overflow-hidden">
-                      {file.fileType.includes('image') ? (
-                        <img 
-                          src={file.url} 
-                          alt={file.name} 
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                        />
-                      ) : file.fileType.includes('video') ? (
-                        <video 
-                          src={file.url} 
-                          className="w-full h-full object-cover" 
-                          autoPlay muted loop playsInline controls
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-900">
-                          <FileText className="w-16 h-16 opacity-20" />
-                        </div>
-                      )}
-                      
-                      {/* Overlay on hover */}
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-4 p-8 text-center backdrop-blur-sm">
-                        <p className="font-bold text-lg">{file.name}</p>
-                        <a 
-                          href={file.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className={`px-6 py-2 rounded-full font-bold text-sm transition-transform hover:scale-110 flex items-center gap-2 ${currentTheme.btn}`}
-                        >
-                          View Full <ExternalLink className="w-4 h-4" />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
+          <PortfolioGallery files={data.workFiles || []} theme={currentTheme} />
 
           {/* Experience Roadmap */}
           <section className="grid lg:grid-cols-2 gap-24 mb-40">
