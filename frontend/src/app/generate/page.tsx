@@ -9,6 +9,7 @@ import { generatePortfolio } from "@/lib/api";
 import { User, Palette, CloudUpload, FileText, Sparkles, Rocket, Info, CheckCircle2 } from "lucide-react";
 
 const THEMES = [
+  { id: "premium", title: "Premium Amber", desc: "Centered, bold, and high-contrast gold aesthetic.", gradient: "from-[#F59E0B] to-[#78350F]" },
   { id: "minimal", title: "Zen Minimal", desc: "Pure, elegant, and focused on content.", gradient: "from-gray-200 to-gray-400" },
   { id: "neon", title: "Cyber Neon", desc: "High-energy futuristic cyberpunk vibe.", gradient: "from-blue-500 to-purple-600" },
   { id: "dark", title: "Deep Space", desc: "Sophisticated dark mode for developers.", gradient: "from-slate-800 to-slate-950" },
@@ -17,7 +18,7 @@ const THEMES = [
 export default function GeneratePortfolio() {
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
-  const [theme, setTheme] = useState("minimal");
+  const [theme, setTheme] = useState("premium");
   const [resume, setResume] = useState<File | null>(null);
   const [workFiles, setWorkFiles] = useState<File[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);

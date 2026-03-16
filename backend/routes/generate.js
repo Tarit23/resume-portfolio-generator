@@ -69,18 +69,22 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     You are a professional resume parser. 
     Strict Task: Convert the following resume text into a single, valid JSON object.
     
+    Style Guide:
+    1. Bio/About: Make it punchy, concise, and professional (15-20 words max).
+    2. Professional Title: Short and impactful (e.g. "Creative Designer & Dev").
+    3. Experience Descriptions: Focus on high-level impact rather than bullet points.
+    
     Rules:
     1. ONLY return the JSON object.
-    2. Do NOT include any introductory text, markdown code blocks (\`\`\`json), or explanations.
-    3. Ensure all fields in the schema below are present. If data is missing, use empty strings or empty arrays.
+    2. Ensure all fields in the schema below are present.
     
     JSON Schema:
     {
-      "title": "Professional Title (e.g. Full Stack Developer)",
-      "about": "A concise professional summary (2-3 sentences)",
+      "title": "Impactful Title (e.g. Video Editor & Visual Artist)",
+      "about": "A concise, punchy professional summary (max 20 words)",
       "skills": ["Skill1", "Skill2"],
       "projects": [{"title": "Project Name", "description": "Short description", "link": "https://..."}],
-      "experience": [{"role": "Job Title", "company": "Company Name", "duration": "e.g., 2020 - 2023", "description": "Short summary of responsibilities"}],
+      "experience": [{"role": "Job Title", "company": "Company Name", "duration": "e.g., 2020 - 2023", "description": "High-level summary of responsibilities"}],
       "education": [{"degree": "Degree Name", "institution": "University Name", "year": "Graduation Year"}],
       "contact": {"email": "...", "linkedin": "...", "github": "...", "website": "..."}
     }
@@ -204,7 +208,7 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     // 4. Save to Database
     const portfolio = await Portfolio.findOneAndUpdate(
       { username },
-      { username, name, theme, ...extractedData, workFiles: uploadedWorkFiles },
+      { username, name, theme: theme || 'premium', ...extractedData, workFiles: uploadedWorkFiles },
       { new: true, upsert: true }
     );
 

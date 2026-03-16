@@ -41,19 +41,17 @@ export default function PortfolioGallery({ files, theme }: PortfolioGalleryProps
   if (!files || files.length === 0) return null;
 
   return (
-    <section className="mb-40">
-      <h3 className="text-[10px] font-black tracking-[0.5em] uppercase opacity-40 mb-12 flex items-center gap-4">
-        <span className="h-[1px] w-12 bg-white/20" />
-        Selected Case Studies
-      </h3>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <section>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {files.map((file, i) => {
           const isVideo = file.fileType.includes("video");
           const isImage = file.fileType.includes("image");
           const url = safeUrl(file.url);
           const isLoaded = loadedMedia[file.url];
           const hasError = mediaErrors[file.url];
+
+          // Make the first video a "Large Feature" or "Demo Reel" style if it's the first item
+          const isFeature = i === 0 && (isVideo || files.length === 1);
 
           return (
             <motion.div 
@@ -62,9 +60,15 @@ export default function PortfolioGallery({ files, theme }: PortfolioGalleryProps
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className={`group relative rounded-[40px] overflow-hidden ${theme.card} transition-all duration-500 cursor-pointer aspect-[4/3]`}
+              className={`group relative rounded-3xl overflow-hidden ${theme.card} transition-all duration-500 cursor-pointer ${isFeature ? 'md:col-span-2 aspect-video' : 'aspect-[16/10]'}`}
               onClick={() => setSelectedFile(file)}
             >
+              {isFeature && isVideo && (
+                <div className="absolute top-6 left-6 z-20 px-3 py-1 bg-[#F59E0B] text-black text-[10px] font-black tracking-widest uppercase rounded">
+                  Demo Reel
+                </div>
+              )}
+
               {!isLoaded && !hasError && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/5 animate-pulse">
                    <Zap className="w-8 h-8 opacity-20 animate-bounce" />
@@ -75,14 +79,13 @@ export default function PortfolioGallery({ files, theme }: PortfolioGalleryProps
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-500/10 gap-2 p-6 text-center">
                    <X className="w-8 h-8 text-red-400 opacity-50" />
                    <div className="text-[10px] font-bold uppercase tracking-widest opacity-40">Load Failed</div>
-                   <div className="text-[8px] opacity-20 truncate max-w-full font-mono">{file.fileType}</div>
                    <a 
                     href={file.url} 
                     target="_blank" 
                     onClick={(e) => e.stopPropagation()}
                     className="mt-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[9px] font-bold hover:bg-white/10 transition-colors"
                    >
-                     Direct Link ↗
+                     View Original ↗
                    </a>
                 </div>
               )}
@@ -94,7 +97,7 @@ export default function PortfolioGallery({ files, theme }: PortfolioGalleryProps
                     alt={file.name} 
                     onLoad={() => handleMediaLoad(file.url)}
                     onError={() => handleMediaError(file.url)}
-                    className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${isLoaded ? 'opacity-100' : 'opacity-0'}`} 
+                    className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-105 ${isLoaded ? 'opacity-100' : 'opacity-0'}`} 
                   />
                 ) : isVideo ? (
                   <div className="relative w-full h-full">
@@ -110,28 +113,23 @@ export default function PortfolioGallery({ files, theme }: PortfolioGalleryProps
                     >
                       <source src={url} type={file.fileType} />
                     </video>
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                      <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Play className="w-6 h-6 fill-white text-white" />
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                      <div className="w-16 h-16 rounded-full bg-black/20 backdrop-blur-md border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Play className="w-6 h-6 fill-white text-white ml-1" />
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900/50 gap-4">
-                    <FileText className="w-16 h-16 opacity-20" />
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-white/5 gap-4">
+                    <FileText className="w-16 h-16 opacity-10" />
                     <span className="text-xs font-bold opacity-30 uppercase tracking-widest truncate max-w-[80%] px-4">{file.name}</span>
                   </div>
                 )}
                 
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-4 p-8 text-center backdrop-blur-sm">
-                   <div className="p-3 rounded-full bg-white/10 border border-white/20">
-                      <ZoomIn className="w-6 h-6" />
-                   </div>
-                   <div>
-                      <p className="font-bold text-lg leading-tight truncate max-w-full">{file.name}</p>
-                      <p className="text-[10px] uppercase tracking-widest opacity-60 mt-2">Click to expand</p>
-                   </div>
+                {/* Content Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-8">
+                   <p className="font-bold text-lg leading-tight truncate">{file.name}</p>
+                   <p className="text-[10px] uppercase tracking-widest opacity-60 mt-2">Click to expand</p>
                 </div>
               </div>
             </motion.div>
