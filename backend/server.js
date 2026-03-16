@@ -24,6 +24,16 @@ app.get("/", (req, res) => {
   res.send("PromptFolio Backend API is running.");
 });
 
+app.get("/api/health", (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? "Connected" : "Disconnected";
+  res.json({
+    status: "Healthy",
+    database: dbStatus,
+    timestamp: new Date().toISOString(),
+    version: "1.2.0"
+  });
+});
+
 app.get("/api/version", (req, res) => {
   res.json({ version: "1.0.1", status: "Active with Gemini 1.5 Fixes" });
 });
