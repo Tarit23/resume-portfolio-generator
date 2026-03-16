@@ -161,46 +161,43 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     
     console.log(`Step 3: Uploading ${workFiles.length} files... (Cloudinary: ${isCloudinaryConfigured ? 'YES' : 'NO'})`);
 
+    if (workFiles.length > 0 && !isCloudinaryConfigured) {
+      throw new Error('Cloudinary is not configured on the server. Please add CLOUDINARY_URL to your environment variables to support media uploads.');
+    }
+
     for (const file of workFiles) {
       try {
         console.log(`- Uploading ${file.originalname} (${file.mimetype})`);
-        if (isCloudinaryConfigured) {
-          // Use 'auto' and keep original filename for better SEO/tracking if possible
-          const uploadRes = await cloudinary.uploader.upload(file.path, { 
-            resource_type: 'auto',
-            folder: `portfolio_${username}`,
-            use_filename: true,
-            unique_filename: true
-          });
-          
-          console.log(`- CLOUDINARY SUCCESS: ${file.originalname} -> ${uploadRes.secure_url} (${uploadRes.resource_type}/${uploadRes.format})`);
-          
-          // Construct precise mime-type from Cloudinary metadata
-          let finalFileType = file.mimetype;
-          if (uploadRes.resource_type === 'video') {
-            finalFileType = `video/${uploadRes.format === 'mov' ? 'quicktime' : (uploadRes.format || 'mp4')}`;
-          } else if (uploadRes.resource_type === 'image') {
-            finalFileType = `image/${uploadRes.format || 'png'}`;
-          } else if (uploadRes.format === 'pdf') {
-            finalFileType = 'application/pdf';
-          }
-          
-          // Store the raw URL from Cloudinary - it's already encoded
-          uploadedWorkFiles.push({ 
-            url: uploadRes.secure_url, 
-            fileType: finalFileType, 
-            name: file.originalname 
-          });
-        } else {
-          console.warn(`WARNING: Cloudinary not configured. Using placeholder for ${file.originalname}`);
-          uploadedWorkFiles.push({ 
-            url: 'https://via.placeholder.com/150', 
-            fileType: file.mimetype, 
-            name: file.originalname 
-          });
+        
+        // Use 'auto' and keep original filename for better SEO/tracking if possible
+        const uploadRes = await cloudinary.uploader.upload(file.path, { 
+          resource_type: 'auto',
+          folder: `portfolio_${username}`,
+          use_filename: true,
+          unique_filename: true
+        });
+        
+        console.log(`- CLOUDINARY SUCCESS: ${file.originalname} -> ${uploadRes.secure_url} (${uploadRes.resource_type}/${uploadRes.format})`);
+        
+        // Construct precise mime-type from Cloudinary metadata
+        let finalFileType = file.mimetype;
+        if (uploadRes.resource_type === 'video') {
+          finalFileType = `video/${uploadRes.format === 'mov' ? 'quicktime' : (uploadRes.format || 'mp4')}`;
+        } else if (uploadRes.resource_type === 'image') {
+          finalFileType = `image/${uploadRes.format || 'png'}`;
+        } else if (uploadRes.format === 'pdf') {
+          finalFileType = 'application/pdf';
         }
+        
+        // Store the raw URL from Cloudinary
+        uploadedWorkFiles.push({ 
+          url: uploadRes.secure_url, 
+          fileType: finalFileType, 
+          name: file.originalname 
+        });
       } catch (err) {
         console.error(`- CLOUDINARY ERROR [${file.originalname}]:`, err.message);
+        throw new Error(`Failed to upload ${file.originalname} to Cloudinary: ${err.message}`);
       } finally {
         if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
       }
