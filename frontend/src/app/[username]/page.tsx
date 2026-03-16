@@ -69,7 +69,7 @@ export default async function PortfolioPage({ params }: { params: Promise<{ user
         {/* Navigation / Minimal Header */}
         <nav className="py-12 flex justify-center items-center">
             <Link href="/" className="text-sm font-black tracking-[0.3em] flex items-center gap-2 opacity-50 hover:opacity-100 transition-opacity">
-              <Zap className={`w-4 h-4 ${currentTheme.accent.includes('#F59E0B') ? 'text-[#F59E0B]' : 'text-blue-500'}`} />
+              <Zap className={`w-4 h-4 ${data.theme === 'premium' || !data.theme ? 'text-[#F59E0B]' : 'text-blue-500'}`} />
               PROMPTFOLIO
             </Link>
         </nav>
@@ -107,12 +107,12 @@ export default async function PortfolioPage({ params }: { params: Promise<{ user
                     <Mail className="w-4 h-4" /> Hire Me
                  </a>
                )}
-               <button 
-                onClick={() => document.getElementById('work')?.scrollIntoView({ behavior: 'smooth' })}
+               <a 
+                href="#work"
                 className="px-8 py-4 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-all font-bold flex items-center gap-2"
                >
                   View My Work
-               </button>
+               </a>
             </div>
           </header>
 
