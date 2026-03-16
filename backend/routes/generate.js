@@ -66,13 +66,14 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     }
 
     const prompt = `
-    You are a professional resume parser. 
+    You are a professional resume parser for a top-tier creative agency. 
     Strict Task: Convert the following resume text into a single, valid JSON object.
     
-    Style Guide:
-    1. Bio/About: Make it punchy, concise, and professional (15-20 words max).
-    2. Professional Title: Short and impactful (e.g. "Creative Designer & Dev").
-    3. Experience Descriptions: Focus on high-level impact rather than bullet points.
+    Style Guide (CRITICAL):
+    1. Bio/About: Make it punchy, concise, and visionary (max 15 words). Start with an em-dash (—).
+    2. Professional Title: Short, impactful, and ALL CAPS (e.g. "CREATIVE DEVELOPER & DESIGNER").
+    3. Experience Roles: ALL CAPS and concise.
+    4. Descriptions: Focus on high-level impact (max 20 words).
     
     Rules:
     1. ONLY return the JSON object.
@@ -80,11 +81,11 @@ router.post('/', upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'workFi
     
     JSON Schema:
     {
-      "title": "Impactful Title (e.g. Video Editor & Visual Artist)",
-      "about": "A concise, punchy professional summary (max 20 words)",
+      "title": "IMPACTFUL TITLE (ALL CAPS)",
+      "about": "— A concise, punchy professional summary",
       "skills": ["Skill1", "Skill2"],
-      "projects": [{"title": "Project Name", "description": "Short description", "link": "https://..."}],
-      "experience": [{"role": "Job Title", "company": "Company Name", "duration": "e.g., 2020 - 2023", "description": "High-level summary of responsibilities"}],
+      "projects": [{"title": "Project Name", "description": "High-level impact description", "link": "https://..."}],
+      "experience": [{"role": "JOB TITLE (ALL CAPS)", "company": "Company Name", "duration": "e.g., 2020 - 2023", "description": "High-level summary of responsibilities"}],
       "education": [{"degree": "Degree Name", "institution": "University Name", "year": "Graduation Year"}],
       "contact": {"email": "...", "linkedin": "...", "github": "...", "website": "..."}
     }

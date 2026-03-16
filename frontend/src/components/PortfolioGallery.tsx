@@ -32,17 +32,22 @@ export default function PortfolioGallery({ files, theme }: PortfolioGalleryProps
   // Helper to ensure URLs are properly handled
   const safeUrl = (url: string) => {
     if (!url) return "";
-    // Cloudinary URLs are already encoded by the SDK.
-    // We only need to escape naked parentheses if they are being used in a CSS context,
-    // but for <img> and <video> src, the raw URL from Cloudinary is usually perfect.
-    return url;
+    // Handle special characters in Cloudinary URLs
+    try {
+       // Cloudinary URLs usually come encoded, but we ensure they are safe for standard <img> tags
+       // Sometimes double encoding is an issue, so we do a simple check
+       if (url.includes('%')) return url;
+       return encodeURI(url);
+    } catch (e) {
+       return url;
+    }
   };
 
   if (!files || files.length === 0) return null;
 
   return (
     <section>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {files.map((file, i) => {
           const isVideo = file.fileType.includes("video");
           const isImage = file.fileType.includes("image");
@@ -56,53 +61,60 @@ export default function PortfolioGallery({ files, theme }: PortfolioGalleryProps
           return (
             <motion.div 
               key={i}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className={`group relative rounded-3xl overflow-hidden ${theme.card} transition-all duration-500 cursor-pointer ${isFeature ? 'md:col-span-2 aspect-video' : 'aspect-[16/10]'}`}
+              transition={{ delay: i * 0.1, duration: 0.6 }}
+              className={`group relative rounded-[32px] overflow-hidden ${theme.card} border-white/5 transition-all duration-700 cursor-pointer ${isFeature ? 'md:col-span-2 aspect-video' : 'aspect-[16/10]'}`}
               onClick={() => setSelectedFile(file)}
             >
               {isFeature && isVideo && (
-                <div className="absolute top-6 left-6 z-20 px-3 py-1 bg-[#F59E0B] text-black text-[10px] font-black tracking-widest uppercase rounded">
-                  Demo Reel
+                <div className="absolute top-8 left-8 z-20 px-4 py-1.5 bg-[#F59E0B] text-[black] text-[10px] font-black tracking-[0.3em] uppercase rounded-full shadow-2xl">
+                  DEMO REEL
                 </div>
               )}
 
+              {/* Enhanced Loader */}
               {!isLoaded && !hasError && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white/5 animate-pulse">
-                   <Zap className="w-8 h-8 opacity-20 animate-bounce" />
+                <div className="absolute inset-0 flex items-center justify-center bg-white/[0.02] backdrop-blur-sm z-30">
+                   <div className="w-12 h-12 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
                 </div>
               )}
 
               {hasError && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-500/10 gap-2 p-6 text-center">
-                   <X className="w-8 h-8 text-red-400 opacity-50" />
-                   <div className="text-[10px] font-bold uppercase tracking-widest opacity-40">Load Failed</div>
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-500/[0.03] gap-4 p-8 text-center z-30">
+                   <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
+                     <X className="w-6 h-6 text-red-500/50" />
+                   </div>
+                   <div>
+                     <div className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-2 text-red-400">MEDIA LOAD FAILED</div>
+                     <p className="text-[10px] opacity-20 font-mono mb-4">{file.name}</p>
+                   </div>
                    <a 
                     href={file.url} 
                     target="_blank" 
                     onClick={(e) => e.stopPropagation()}
-                    className="mt-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[9px] font-bold hover:bg-white/10 transition-colors"
+                    className="px-4 py-2 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors"
                    >
-                     View Original ↗
+                     Direct Link ↗
                    </a>
                 </div>
               )}
 
-              <div className="w-full h-full relative overflow-hidden">
+              <div className="w-full h-full relative overflow-hidden bg-black/40">
                 {isImage ? (
                   <img 
                     src={url} 
                     alt={file.name} 
                     onLoad={() => handleMediaLoad(file.url)}
                     onError={() => handleMediaError(file.url)}
-                    className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-105 ${isLoaded ? 'opacity-100' : 'opacity-0'}`} 
+                    crossOrigin="anonymous"
+                    className={`w-full h-full object-cover transition-all duration-1000 group-hover:scale-105 ${isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-110'}`} 
                   />
                 ) : isVideo ? (
                   <div className="relative w-full h-full">
                     <video 
-                      className={`w-full h-full object-cover ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+                      className={`w-full h-full object-cover transition-opacity duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
                       muted 
                       loop 
                       playsInline
@@ -110,26 +122,32 @@ export default function PortfolioGallery({ files, theme }: PortfolioGalleryProps
                       preload="auto"
                       onCanPlay={() => handleMediaLoad(file.url)}
                       onError={() => handleMediaError(file.url)}
+                      crossOrigin="anonymous"
                     >
                       <source src={url} type={file.fileType} />
                     </video>
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                      <div className="w-16 h-16 rounded-full bg-black/20 backdrop-blur-md border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Play className="w-6 h-6 fill-white text-white ml-1" />
+                    <div className="absolute inset-0 bg-transparent group-hover:bg-black/40 transition-all duration-500 flex items-center justify-center">
+                      <div className="w-20 h-20 rounded-full bg-black/20 backdrop-blur-xl border border-white/10 flex items-center justify-center scale-75 group-hover:scale-100 opacity-0 group-hover:opacity-100 transition-all duration-500 shadow-2xl">
+                        <Play className="w-8 h-8 fill-white text-white ml-1.5" />
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center bg-white/5 gap-4">
-                    <FileText className="w-16 h-16 opacity-10" />
-                    <span className="text-xs font-bold opacity-30 uppercase tracking-widest truncate max-w-[80%] px-4">{file.name}</span>
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-white/[0.02] gap-6">
+                    <div className="w-20 h-20 rounded-[32px] bg-white/[0.03] border border-white/5 flex items-center justify-center">
+                      <FileText className="w-10 h-10 opacity-20" />
+                    </div>
+                    <span className="text-[10px] font-black opacity-30 uppercase tracking-[0.4em] truncate max-w-[80%] px-4">{file.name}</span>
                   </div>
                 )}
                 
-                {/* Content Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-8">
-                   <p className="font-bold text-lg leading-tight truncate">{file.name}</p>
-                   <p className="text-[10px] uppercase tracking-widest opacity-60 mt-2">Click to expand</p>
+                {/* Content Overlay (Premium Slide-Up) */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-10 transform translate-y-4 group-hover:translate-y-0">
+                   <div className="text-[10px] font-black tracking-[0.3em] text-[#F59E0B] mb-3 uppercase">SELECTED CASE STUDY</div>
+                   <h4 className="font-black text-2xl tracking-tight leading-none mb-4">{file.name}</h4>
+                   <div className="flex items-center gap-2 text-[10px] font-black tracking-widest opacity-60 uppercase">
+                      VIEW FULL CASE <ExternalLink className="w-3 h-3" />
+                   </div>
                 </div>
               </div>
             </motion.div>
