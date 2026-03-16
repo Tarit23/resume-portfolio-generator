@@ -41,7 +41,8 @@ const PortfolioSchema = new mongoose.Schema({
     fileType: String,
     name: String
   }],
-  resumeUrl: String
+  resumeUrl: String,
+  profileImageUrl: String
 }, { timestamps: true });
 
 module.exports = mongoose.model('Portfolio', PortfolioSchema);

@@ -18,8 +18,10 @@ const THEMES = [
 export default function GeneratePortfolio() {
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [theme, setTheme] = useState("premium");
   const [resume, setResume] = useState<File | null>(null);
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
   const [workFiles, setWorkFiles] = useState<File[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   
@@ -27,7 +29,7 @@ export default function GeneratePortfolio() {
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !username || !resume) return alert("Please fill required fields");
+    if (!name || !username || !resume) return alert("Please fill required fields (Name, Handle, Resume)");
     
     setIsGenerating(true);
     
@@ -35,8 +37,13 @@ export default function GeneratePortfolio() {
       const formData = new FormData();
       formData.append("name", name);
       formData.append("username", username);
+      formData.append("email", email);
       formData.append("theme", theme);
       formData.append("resume", resume);
+      
+      if (profilePhoto) {
+        formData.append("profilePhoto", profilePhoto);
+      }
       
       workFiles.forEach((file) => {
         formData.append("workFiles", file);
@@ -54,20 +61,20 @@ export default function GeneratePortfolio() {
   };
 
   return (
-    <main className="min-h-screen bg-black text-white relative overflow-x-hidden font-sans selection:bg-blue-500/30">
+    <main className="min-h-screen bg-black text-white relative overflow-x-hidden font-sans selection:bg-amber-500/30">
       {/* Subtle Background */}
       <div className="absolute inset-0 bg-dot-pattern opacity-5 pointer-events-none" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-full bg-blue-900/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-full bg-amber-900/5 blur-[120px] rounded-full pointer-events-none" />
       
       <div className="max-w-4xl mx-auto px-6 py-20 relative z-10">
         <header className="flex flex-col items-center text-center mb-20">
           <motion.div 
             initial={{ opacity: 0, y: -10 }} 
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold tracking-[0.2em] text-blue-400 mb-8"
+            className="flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold tracking-[0.2em] text-amber-500 mb-8"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            AI PORTFOLIO ARCHITECT <span className="opacity-40">v1.1.0</span>
+            AI PORTFOLIO ARCHITECT <span className="opacity-40">v1.2.0</span>
           </motion.div>
           
           <motion.h1 
@@ -87,62 +94,94 @@ export default function GeneratePortfolio() {
           </motion.p>
         </header>
 
-        <form onSubmit={handleGenerate} className="space-y-8">
+        <form onSubmit={handleGenerate} className="space-y-12">
           {/* Section 1: Identity */}
-          <section className="bg-slate-900/40 border border-white/5 rounded-3xl p-8 md:p-12 backdrop-blur-md">
-            <div className="flex items-center gap-4 mb-10">
-              <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-                <User className="w-6 h-6" />
+          <section className="bg-white/[0.02] border border-white/5 rounded-[40px] p-8 md:p-14 backdrop-blur-xl">
+            <div className="flex items-center gap-5 mb-12">
+              <div className="w-14 h-14 rounded-[22px] bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shadow-lg shadow-amber-500/5">
+                <User className="w-7 h-7" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold">1. Personal Identity</h2>
-                <p className="text-sm text-gray-500">How you'll be represented online.</p>
+                <h2 className="text-3xl font-bold tracking-tight text-white">1. Personal Identity</h2>
+                <p className="text-sm text-gray-500 mt-1">How you'll be represented online.</p>
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Full Name</label>
+            <div className="grid md:grid-cols-2 gap-10">
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Full Name</label>
                 <div className="relative group">
                   <input 
                     type="text" 
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-gray-700 focus:outline-none focus:border-blue-500/50 focus:bg-white/[0.05] transition-all" 
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4.5 text-white placeholder:text-gray-700 focus:outline-none focus:border-amber-500/50 focus:bg-white/[0.05] transition-all" 
                     placeholder="e.g. Alexander Pierce"
                   />
-                  <div className="absolute inset-0 rounded-2xl border border-blue-500/0 group-focus-within:border-blue-500/20 pointer-events-none transition-all" />
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Universal Handle</label>
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Email (Visible publicly)</label>
+                <div className="relative group">
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4.5 text-white placeholder:text-gray-700 focus:outline-none focus:border-amber-500/50 focus:bg-white/[0.05] transition-all" 
+                    placeholder="e.g. alex@example.com"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4 md:col-span-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Universal Handle</label>
                 <div className="relative group flex items-center">
-                  <div className="absolute left-6 text-gray-500 font-medium select-none pointer-events-none">folio.me/</div>
+                  <div className="absolute left-6 text-gray-600 font-bold select-none pointer-events-none">folio.me/</div>
                   <input 
                     type="text" 
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl pl-[90px] pr-6 py-4 text-white placeholder:text-gray-700 focus:outline-none focus:border-blue-500/50 focus:bg-white/[0.05] transition-all font-medium" 
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl pl-28 pr-6 py-4.5 text-white placeholder:text-gray-700 focus:outline-none focus:border-amber-500/50 focus:bg-white/[0.05] transition-all font-bold" 
                     placeholder="username"
                   />
-                  <div className="absolute inset-0 rounded-2xl border border-blue-500/0 group-focus-within:border-blue-500/20 pointer-events-none transition-all" />
+                </div>
+              </div>
+
+              <div className="space-y-4 md:col-span-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Profile Photo (Highly Recommended)</label>
+                <div className="relative group">
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => setProfilePhoto(e.target.files?.[0] || null)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                  />
+                  <div className={`border-2 border-dashed rounded-2xl p-6 transition-all flex items-center gap-6 ${profilePhoto ? 'border-amber-500/40 bg-amber-500/5 text-amber-500' : 'border-white/10 bg-white/[0.02] group-hover:bg-white/[0.05]'}`}>
+                    <div className={`p-4 rounded-xl ${profilePhoto ? 'bg-amber-500 text-black' : 'bg-white/5 text-gray-400'}`}>
+                      <Info className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm">{profilePhoto ? profilePhoto.name : "Choose a professional photo"}</h4>
+                      <p className="text-[10px] text-gray-500">Supports JPG, PNG (Max 2MB)</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </section>
 
           {/* Section 2: Resume */}
-          <section className="bg-slate-900/40 border border-white/5 rounded-3xl p-8 md:p-12 backdrop-blur-md">
-            <div className="flex items-center gap-4 mb-10">
-                <div className="w-12 h-12 rounded-2xl bg-purple-600/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                  <FileText className="w-6 h-6" />
+          <section className="bg-white/[0.02] border border-white/5 rounded-[40px] p-8 md:p-14 backdrop-blur-xl">
+            <div className="flex items-center gap-5 mb-12">
+                <div className="w-14 h-14 rounded-[22px] bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shadow-lg shadow-amber-500/5">
+                  <FileText className="w-7 h-7" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold">2. The Blueprint</h2>
-                  <p className="text-sm text-gray-500">Your professional history and skills.</p>
+                  <h2 className="text-3xl font-bold tracking-tight">2. The Blueprint</h2>
+                  <p className="text-sm text-gray-500 mt-1">Your professional history and skills.</p>
                 </div>
             </div>
 
@@ -154,28 +193,28 @@ export default function GeneratePortfolio() {
                 onChange={(e) => setResume(e.target.files?.[0] || null)}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
               />
-              <div className={`border-2 border-dashed rounded-[32px] p-12 text-center transition-all ${resume ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-white/10 bg-white/[0.02] group-hover:bg-white/[0.05] group-hover:border-white/20'}`}>
+              <div className={`border-2 border-dashed rounded-[32px] p-12 text-center transition-all ${resume ? 'border-amber-500/40 bg-amber-500/5' : 'border-white/10 bg-white/[0.02] group-hover:bg-white/[0.05]'}`}>
                 <div className="mb-6 relative inline-flex">
-                   <div className={`p-5 rounded-3xl ${resume ? 'bg-emerald-500/10 text-emerald-400' : 'bg-blue-500/10 text-blue-400'}`}>
-                      <FileText className="w-10 h-10" />
+                   <div className={`p-6 rounded-3xl ${resume ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-white/5 text-gray-400'}`}>
+                      <FileText className="w-12 h-12" />
                    </div>
-                   {resume && <div className="absolute -top-2 -right-2 bg-emerald-500 text-black rounded-full p-1"><CheckCircle2 className="w-4 h-4" /></div>}
+                   {resume && <div className="absolute -top-2 -right-2 bg-amber-500 text-black rounded-full p-1.5 shadow-lg"><CheckCircle2 className="w-4 h-4" /></div>}
                 </div>
-                <h3 className="text-xl font-bold mb-2">{resume ? resume.name : "Select your resume"}</h3>
-                <p className="text-gray-500 text-sm">Tap to browse or drag & drop (PDF, DOCX max 5MB)</p>
+                <h3 className="text-xl font-black mb-2">{resume ? resume.name : "Select your Resume"}</h3>
+                <p className="text-gray-500 text-sm font-medium italic opacity-60">PDF or DOCX (max 5MB)</p>
               </div>
             </div>
           </section>
 
           {/* Section 3: Social Proof */}
-          <section className="bg-slate-900/40 border border-white/5 rounded-3xl p-8 md:p-12 backdrop-blur-md">
-            <div className="flex items-center gap-4 mb-10">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-600/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                  <CloudUpload className="w-6 h-6" />
+          <section className="bg-white/[0.02] border border-white/5 rounded-[40px] p-8 md:p-14 backdrop-blur-xl">
+            <div className="flex items-center gap-5 mb-12">
+                <div className="w-14 h-14 rounded-[22px] bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shadow-lg shadow-amber-500/5">
+                  <CloudUpload className="w-7 h-7" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold">3. Achievement Gallery</h2>
-                  <p className="text-sm text-gray-500">Optional artifacts from your career.</p>
+                  <h2 className="text-3xl font-bold tracking-tight">3. Work Artifacts</h2>
+                  <p className="text-sm text-gray-500 mt-1">Optional images or videos from your projects.</p>
                 </div>
             </div>
 
@@ -183,16 +222,16 @@ export default function GeneratePortfolio() {
               <input 
                 type="file" 
                 multiple
-                accept="image/*,video/*,.pdf"
+                accept="image/*,video/*"
                 onChange={(e) => {
                   if (e.target.files) setWorkFiles(Array.from(e.target.files));
                 }}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
               />
-              <div className={`border-2 border-dashed rounded-[32px] p-10 text-center transition-all ${workFiles.length > 0 ? 'border-blue-500/30 bg-blue-500/5' : 'border-white/10 bg-white/[0.02] group-hover:bg-white/[0.05] group-hover:border-white/20'}`}>
-                <CloudUpload className="w-8 h-8 mx-auto text-gray-500 mb-4" />
-                <p className="font-bold text-gray-400">Upload Project Artifacts</p>
-                <p className="text-xs text-gray-600 mt-1 uppercase tracking-tighter">Images, Videos, PDFs supported</p>
+              <div className={`border-2 border-dashed rounded-[32px] p-10 text-center transition-all ${workFiles.length > 0 ? 'border-amber-500/40 bg-amber-500/5' : 'border-white/10 bg-white/[0.02] group-hover:bg-white/[0.05]'}`}>
+                <CloudUpload className="w-10 h-10 mx-auto text-gray-600 mb-4" />
+                <p className="font-bold text-gray-400">Add Project Media</p>
+                <p className="text-[10px] text-gray-600 mt-1 uppercase tracking-widest">Images, Videos supported</p>
                 
                 <AnimatePresence>
                   {workFiles.length > 0 && (
@@ -202,7 +241,7 @@ export default function GeneratePortfolio() {
                       className="mt-6 flex flex-wrap gap-2 justify-center relative z-30"
                     >
                       {workFiles.map((file, i) => (
-                        <span key={i} className="text-[10px] font-bold bg-white/5 border border-white/10 px-3 py-1.5 rounded-full text-gray-400">
+                        <span key={i} className="text-[10px] font-black bg-white/5 border border-white/10 px-4 py-2 rounded-full text-amber-500/80">
                           {file.name}
                         </span>
                       ))}
@@ -213,22 +252,22 @@ export default function GeneratePortfolio() {
             </div>
           </section>
 
-          {/* Section 4: Experience Selection */}
-          <section className="bg-slate-900/40 border border-white/5 rounded-3xl p-8 md:p-12 backdrop-blur-md">
-            <h3 className="text-xl font-bold mb-8 flex items-center gap-3">
-              <Palette className="w-5 h-5 text-gray-400" />
+          {/* Section 4: Theme */}
+          <section className="bg-white/[0.02] border border-white/5 rounded-[40px] p-8 md:p-14 backdrop-blur-xl">
+            <h3 className="text-xl font-bold mb-10 flex items-center gap-3">
+              <Palette className="w-6 h-6 text-gray-600" />
               Visual Foundation
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {THEMES.map((t) => (
                 <div 
                   key={t.id}
                   onClick={() => setTheme(t.id)}
-                  className={`p-6 rounded-2xl cursor-pointer border transition-all duration-300 ${theme === t.id ? 'bg-white/10 border-blue-500/50 shadow-lg shadow-blue-500/10' : 'bg-white/[0.02] border-white/5 hover:border-white/10 opacity-70 hover:opacity-100'}`}
+                  className={`p-6 rounded-[32px] cursor-pointer border transition-all duration-500 ${theme === t.id ? 'bg-amber-500/10 border-amber-500/50 shadow-2xl shadow-amber-500/10' : 'bg-white/[0.02] border-white/5 hover:border-white/10 grayscale hover:grayscale-0'}`}
                 >
-                  <div className={`w-full aspect-video rounded-xl bg-gradient-to-br mb-4 ${t.gradient} opacity-50`} />
-                  <h4 className="font-bold mb-1">{t.title}</h4>
-                  <p className="text-[10px] text-gray-500 leading-tight">{t.desc}</p>
+                  <div className={`w-full aspect-video rounded-2xl bg-gradient-to-br mb-6 ${t.gradient} shadow-inner shadow-black/20`} />
+                  <h4 className="font-bold text-lg mb-2">{t.title}</h4>
+                  <p className="text-xs text-gray-500 leading-relaxed font-medium">{t.desc}</p>
                 </div>
               ))}
             </div>
@@ -238,27 +277,27 @@ export default function GeneratePortfolio() {
             <button 
               type="submit" 
               disabled={isGenerating}
-              className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-gray-800 text-white font-bold py-6 rounded-[32px] text-xl transition-all shadow-xl shadow-blue-600/20 flex items-center justify-center gap-3 group"
+              className="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-gray-800 text-black font-black py-7 rounded-[32px] text-2xl transition-all shadow-2xl shadow-amber-500/20 flex items-center justify-center gap-4 group active:scale-[0.98]"
             >
               {isGenerating ? (
                 <>
-                  <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />
-                  ANALYZING BLUEPRINT...
+                  <div className="w-7 h-7 border-[4px] border-black border-t-transparent rounded-full animate-spin" />
+                  ARCHITECTING...
                 </>
               ) : (
                 <>
-                  PUBLISH PORTFOLIO
-                  <Rocket className="w-6 h-6 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                  GENERATE PORTFOLIO
+                  <Rocket className="w-7 h-7 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                 </>
               )}
             </button>
-            <div className="mt-6 flex items-center justify-center gap-6 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
-               <div className="flex items-center gap-2">
-                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                 SECURE ENCRYPTED CHANNEL
+            <div className="mt-8 flex items-center justify-center gap-10 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+               <div className="flex items-center gap-3">
+                 <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/40" />
+                 SERVER ONLINE
                </div>
-               <div className="flex items-center gap-2">
-                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+               <div className="flex items-center gap-3">
+                 <div className="w-2 h-2 rounded-full bg-amber-500 shadow-lg shadow-amber-500/40" />
                  AI ENGINE READY
                </div>
             </div>
@@ -267,7 +306,7 @@ export default function GeneratePortfolio() {
       </div>
 
       <footer className="py-20 text-center relative z-10 border-t border-white/5 max-w-4xl mx-auto">
-         <p className="text-sm text-gray-600 font-medium">PromptFolio AI &bull; Transforming data into destiny.</p>
+         <p className="text-xs text-gray-600 font-bold tracking-[0.1em] uppercase">PromptFolio &bull; The Architecture of Digital Identity</p>
       </footer>
     </main>
   );

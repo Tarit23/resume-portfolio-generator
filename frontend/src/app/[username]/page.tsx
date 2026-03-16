@@ -82,7 +82,14 @@ export default async function PortfolioPage({ params }: { params: Promise<{ user
             <div className="relative inline-block mb-12">
                <div className={`w-32 h-32 rounded-full border border-white/10 p-1 relative z-10 overflow-hidden ${currentTheme.glow}`}>
                   <div className="w-full h-full rounded-full bg-white/5 flex items-center justify-center overflow-hidden">
-                     {data.contact?.github ? (
+                     {data.profileImageUrl ? (
+                       <img 
+                        src={data.profileImageUrl} 
+                        alt={data.name} 
+                        className="w-full h-full object-cover"
+                        crossOrigin="anonymous"
+                       />
+                     ) : data.contact?.github ? (
                        <img 
                         src={`https://github.com/${data.contact.github}.png`} 
                         alt={data.name} 
@@ -95,7 +102,7 @@ export default async function PortfolioPage({ params }: { params: Promise<{ user
                   </div>
                </div>
                {/* Accent decoration */}
-               <div className="absolute -top-4 -right-4 w-8 h-8 rounded-full bg-[#F59E0B] opacity-20 blur-xl animate-pulse" />
+               <div className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-[#F59E0B] opacity-20 blur-2xl animate-pulse" />
             </div>
 
             <div className={`block mb-6 text-xs font-black tracking-[0.5em] uppercase px-4 ${currentTheme.accent}`}>
